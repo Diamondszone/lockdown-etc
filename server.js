@@ -18,11 +18,13 @@ const CORS_PROXY =
 // Store results dengan kategori terpisah
 let urlDatabase = {
   all: [],           // Semua URL yang pernah diproses
-  direct: new Set(), // URL sukses direct
-  proxy: new Set(),  // URL sukses via proxy
-  failed: new Set(), // URL gagal
-  pending: new Set() // URL dalam antrian
+  success: new Set(), // URL sukses (baik direct maupun proxy)
+  failed: new Set(),  // URL gagal total
+  pending: new Set()  // URL dalam antrian
 };
+
+// Detail sukses untuk membedakan direct/proxy
+let successDetails = new Map(); // Map<url, {method: 'direct'|'proxy', timestamp, responseSize}>
 
 let processingHistory = [];
 const MAX_HISTORY = 1000;
@@ -30,9 +32,10 @@ const MAX_HISTORY = 1000;
 // Statistik lengkap
 let stats = {
   totalProcessed: 0,
+  success: 0,
+  failed: 0,
   directSuccess: 0,
   proxySuccess: 0,
-  failed: 0,
   uniqueUrls: 0,
   startTime: new Date(),
   lastProcessed: null,
@@ -92,46 +95,130 @@ const fetchText = async (url) => {
 
 const buildProxyUrl = (u) => `${CORS_PROXY}/${u}`;
 
-// ────────────── URL MANAGEMENT ──────────────
-function addToDatabase(url, status, details = {}) {
+// ────────────── LOGIKA BERTINGKAT ──────────────
+async function checkUrl(url) {
+  // Tandai sebagai pending
+  urlDatabase.pending.add(url);
+  
+  const result = {
+    url,
+    direct: null,
+    proxy: null,
+    finalStatus: null,
+    method: null,
+    timestamp: new Date().toISOString()
+  };
+
+  // LANGKAH 1: Coba Direct
+  console.log(`🔄 Mencoba DIRECT: ${url}`);
+  const direct = await fetchText(url);
+  const directOk = direct.ok && !isCaptcha(direct.text) && isJson(direct.text);
+  
+  result.direct = {
+    ok: directOk,
+    error: direct.error,
+    captcha: direct.text ? isCaptcha(direct.text) : false
+  };
+
+  if (directOk) {
+    // SUKSES via DIRECT
+    console.log(`✅ DIRECT SUKSES: ${url}`);
+    result.finalStatus = 'success';
+    result.method = 'direct';
+    addToDatabase(url, 'success', 'direct', {
+      responseSize: direct.text.length,
+      method: 'direct'
+    });
+    return result;
+  }
+
+  // LANGKAH 2: Jika Direct gagal, coba Proxy
+  console.log(`🔄 Mencoba PROXY: ${url}`);
+  const proxied = await fetchText(buildProxyUrl(url));
+  const proxyOk =
+    proxied.ok && !isCaptcha(proxied.text) && isJson(proxied.text);
+
+  result.proxy = {
+    ok: proxyOk,
+    error: proxied.error,
+    captcha: proxied.text ? isCaptcha(proxied.text) : false
+  };
+
+  if (proxyOk) {
+    // SUKSES via PROXY
+    console.log(`✅ PROXY SUKSES: ${url}`);
+    result.finalStatus = 'success';
+    result.method = 'proxy';
+    addToDatabase(url, 'success', 'proxy', {
+      responseSize: proxied.text.length,
+      method: 'proxy'
+    });
+    return result;
+  }
+
+  // LANGKAH 3: Keduanya gagal
+  console.log(`❌ GAGAL TOTAL: ${url}`);
+  result.finalStatus = 'failed';
+  result.method = null;
+  
+  // Kumpulkan detail error
+  const errorDetails = {
+    directError: !direct.ok ? direct.error : (direct.text ? 'Not JSON or Captcha' : null),
+    proxyError: !proxied.ok ? proxied.error : (proxied.text ? 'Not JSON or Captcha' : null),
+    directCaptcha: direct.text ? isCaptcha(direct.text) : false,
+    proxyCaptcha: proxied.text ? isCaptcha(proxied.text) : false
+  };
+  
+  addToDatabase(url, 'failed', null, errorDetails);
+  return result;
+}
+
+// ────────────── DATABASE MANAGEMENT ──────────────
+function addToDatabase(url, status, method = null, details = {}) {
   const timestamp = new Date().toISOString();
   
-  // Tambah ke semua URL
+  // Tambah ke semua URL jika belum ada
   if (!urlDatabase.all.includes(url)) {
     urlDatabase.all.push(url);
     stats.uniqueUrls = urlDatabase.all.length;
   }
   
-  // Tambah ke kategori spesifik
-  switch(status) {
-    case 'direct':
-      urlDatabase.direct.add(url);
-      urlDatabase.proxy.delete(url);
-      urlDatabase.failed.delete(url);
-      stats.directSuccess++;
-      break;
-    case 'proxy':
-      urlDatabase.proxy.add(url);
-      urlDatabase.direct.delete(url);
-      urlDatabase.failed.delete(url);
-      stats.proxySuccess++;
-      break;
-    case 'failed':
-      urlDatabase.failed.add(url);
-      stats.failed++;
-      break;
-  }
-  
   // Hapus dari pending
   urlDatabase.pending.delete(url);
+  
+  // Tambah ke kategori sesuai status
+  if (status === 'success') {
+    urlDatabase.success.add(url);
+    urlDatabase.failed.delete(url);
+    
+    // Simpan detail metode sukses
+    successDetails.set(url, {
+      method,
+      timestamp,
+      ...details
+    });
+    
+    if (method === 'direct') {
+      stats.directSuccess++;
+    } else if (method === 'proxy') {
+      stats.proxySuccess++;
+    }
+    stats.success++;
+    
+  } else if (status === 'failed') {
+    urlDatabase.failed.add(url);
+    urlDatabase.success.delete(url);
+    successDetails.delete(url);
+    stats.failed++;
+  }
   
   // Tambah ke history
   processingHistory.unshift({
     url,
     status,
+    method,
     timestamp,
-    details,
-    category: status
+    details
   });
   
   // Batasi history
@@ -142,26 +229,53 @@ function addToDatabase(url, status, details = {}) {
   // Update statistik
   stats.totalProcessed++;
   stats.lastProcessed = timestamp;
-  stats.successRate = ((stats.directSuccess + stats.proxySuccess) / stats.totalProcessed * 100).toFixed(2);
+  const totalAttempts = stats.success + stats.failed;
+  stats.successRate = totalAttempts > 0 ? ((stats.success / totalAttempts) * 100).toFixed(2) : 0;
 }
 
-// Export database dalam berbagai format
+// Export database dengan metode terpisah
 function exportDatabase(format = 'json') {
+  // Pisahkan success berdasarkan metode
+  const directUrls = [];
+  const proxyUrls = [];
+  
+  for (const url of urlDatabase.success) {
+    const details = successDetails.get(url);
+    if (details && details.method === 'direct') {
+      directUrls.push(url);
+    } else if (details && details.method === 'proxy') {
+      proxyUrls.push(url);
+    }
+  }
+  
   if (format === 'txt') {
     return {
-      direct: Array.from(urlDatabase.direct).join('\n'),
-      proxy: Array.from(urlDatabase.proxy).join('\n'),
+      success: Array.from(urlDatabase.success).join('\n'),
+      direct: directUrls.join('\n'),
+      proxy: proxyUrls.join('\n'),
       failed: Array.from(urlDatabase.failed).join('\n'),
       all: urlDatabase.all.join('\n')
     };
   }
   
   return {
-    direct: Array.from(urlDatabase.direct),
-    proxy: Array.from(urlDatabase.proxy),
-    failed: Array.from(urlDatabase.failed),
-    all: urlDatabase.all,
     stats,
+    counts: {
+      total: urlDatabase.all.length,
+      success: urlDatabase.success.size,
+      failed: urlDatabase.failed.size,
+      pending: urlDatabase.pending.size,
+      direct: directUrls.length,
+      proxy: proxyUrls.length
+    },
+    urls: {
+      success: Array.from(urlDatabase.success),
+      direct: directUrls,
+      proxy: proxyUrls,
+      failed: Array.from(urlDatabase.failed),
+      pending: Array.from(urlDatabase.pending)
+    },
+    successDetails: Object.fromEntries(successDetails),
     history: processingHistory.slice(0, 100)
   };
 }
@@ -170,19 +284,20 @@ function exportDatabase(format = 'json') {
 function resetDatabase() {
   urlDatabase = {
     all: [],
-    direct: new Set(),
-    proxy: new Set(),
+    success: new Set(),
     failed: new Set(),
     pending: new Set()
   };
   
+  successDetails.clear();
   processingHistory = [];
   
   stats = {
     totalProcessed: 0,
+    success: 0,
+    failed: 0,
     directSuccess: 0,
     proxySuccess: 0,
-    failed: 0,
     uniqueUrls: 0,
     startTime: new Date(),
     lastProcessed: null,
@@ -190,46 +305,9 @@ function resetDatabase() {
   };
 }
 
-// ────────────── HIT URL ──────────────
+// ────────────── HIT URL (MAIN FUNCTION) ──────────────
 async function hitUrl(url) {
-  // Tandai sebagai pending
-  urlDatabase.pending.add(url);
-  
-  const direct = await fetchText(url);
-  const directOk = direct.ok && !isCaptcha(direct.text) && isJson(direct.text);
-
-  if (directOk) {
-    console.log(`🔗 URL: ${url} | ✅ Direct OK | JSON`);
-    addToDatabase(url, 'direct', { 
-      method: 'direct',
-      responseSize: direct.text.length,
-      timestamp: new Date().toISOString()
-    });
-    return;
-  }
-
-  const proxied = await fetchText(buildProxyUrl(url));
-  const proxyOk =
-    proxied.ok && !isCaptcha(proxied.text) && isJson(proxied.text);
-
-  if (proxyOk) {
-    console.log(`🔗 URL: ${url} | ✅ Proxy OK | JSON`);
-    addToDatabase(url, 'proxy', { 
-      method: 'proxy',
-      responseSize: proxied.text.length,
-      timestamp: new Date().toISOString()
-    });
-  } else {
-    console.log(`🔗 URL: ${url} | ❌ Direct & Proxy | BUKAN JSON`);
-    
-    let errorDetails = {};
-    if (!direct.ok) errorDetails.directError = direct.error;
-    if (!proxied.ok) errorDetails.proxyError = proxied.error;
-    if (direct.text && isCaptcha(direct.text)) errorDetails.directCaptcha = true;
-    if (proxied.text && isCaptcha(proxied.text)) errorDetails.proxyCaptcha = true;
-    
-    addToDatabase(url, 'failed', errorDetails);
-  }
+  return await checkUrl(url);
 }
 
 // ────────────── PARALLEL WORKER ──────────────
@@ -248,7 +326,7 @@ async function mainLoop() {
       }
 
       console.log(`📌 Memuat ${urls.length} URL…`);
-      console.log(`📊 Statistik: Total=${stats.totalProcessed}, Direct=${stats.directSuccess}, Proxy=${stats.proxySuccess}, Failed=${stats.failed}`);
+      console.log(`📊 Statistik: Total=${stats.totalProcessed}, Success=${stats.success}, Failed=${stats.failed} (Direct=${stats.directSuccess}, Proxy=${stats.proxySuccess})`);
 
       let current = 0;
 
@@ -256,10 +334,6 @@ async function mainLoop() {
         while (true) {
           let u = urls[current++];
           if (!u) break;
-          
-          // Skip jika sudah diproses? (opsional)
-          // if (urlDatabase.direct.has(u) || urlDatabase.proxy.has(u) || urlDatabase.failed.has(u)) continue;
-          
           await hitUrl(u);
         }
       }
@@ -289,14 +363,24 @@ app.use(express.static('public'));
 
 // API endpoint untuk dashboard
 app.get("/api/stats", (req, res) => {
+  // Hitung direct dan proxy dari successDetails
+  let directCount = 0;
+  let proxyCount = 0;
+  
+  for (const [_, details] of successDetails) {
+    if (details.method === 'direct') directCount++;
+    else if (details.method === 'proxy') proxyCount++;
+  }
+  
   res.json({
     stats,
     counts: {
-      direct: urlDatabase.direct.size,
-      proxy: urlDatabase.proxy.size,
+      success: urlDatabase.success.size,
       failed: urlDatabase.failed.size,
       pending: urlDatabase.pending.size,
-      total: urlDatabase.all.length
+      total: urlDatabase.all.length,
+      direct: directCount,
+      proxy: proxyCount
     }
   });
 });
@@ -321,11 +405,28 @@ app.get("/api/urls/:category", (req, res) => {
   
   let urls;
   switch(category) {
+    case 'success':
+      urls = Array.from(urlDatabase.success);
+      break;
     case 'direct':
-      urls = Array.from(urlDatabase.direct);
+      // Khusus direct success
+      urls = [];
+      for (const url of urlDatabase.success) {
+        const details = successDetails.get(url);
+        if (details && details.method === 'direct') {
+          urls.push(url);
+        }
+      }
       break;
     case 'proxy':
-      urls = Array.from(urlDatabase.proxy);
+      // Khusus proxy success
+      urls = [];
+      for (const url of urlDatabase.success) {
+        const details = successDetails.get(url);
+        if (details && details.method === 'proxy') {
+          urls.push(url);
+        }
+      }
       break;
     case 'failed':
       urls = Array.from(urlDatabase.failed);
@@ -347,9 +448,30 @@ app.get("/api/urls/:category", (req, res) => {
     res.json({ 
       category, 
       count: urls.length, 
-      urls 
+      urls,
+      details: category === 'success' ? Object.fromEntries(
+        urls.map(url => [url, successDetails.get(url)])
+      ) : null
     });
   }
+});
+
+// API endpoint untuk detail URL tertentu
+app.get("/api/url/:url", (req, res) => {
+  const url = decodeURIComponent(req.params.url);
+  
+  const details = successDetails.get(url);
+  const isSuccess = urlDatabase.success.has(url);
+  const isFailed = urlDatabase.failed.has(url);
+  const isPending = urlDatabase.pending.has(url);
+  
+  res.json({
+    url,
+    exists: urlDatabase.all.includes(url),
+    status: isSuccess ? 'success' : (isFailed ? 'failed' : (isPending ? 'pending' : 'unknown')),
+    method: details ? details.method : null,
+    details: details || null
+  });
 });
 
 // API endpoint untuk export semua data
@@ -361,21 +483,31 @@ app.get("/api/export/:format?", (req, res) => {
     res.setHeader('Content-Type', 'text/plain');
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     
-    // Kirim multiple files sebagai zip? Atau pilih salah satu
+    // Hitung statistik
+    const directCount = data.direct.split('\n').filter(Boolean).length;
+    const proxyCount = data.proxy.split('\n').filter(Boolean).length;
+    const failedCount = data.failed.split('\n').filter(Boolean).length;
+    const successCount = data.success.split('\n').filter(Boolean).length;
+    
     res.send(`
 # URL DATABASE EXPORT - ${timestamp}
-# ====================================
+# =================================================
 
-## DIRECT SUCCESS (${data.direct.split('\n').length} URLs)
+## STATISTIK
+# Total Success: ${successCount} (Direct: ${directCount}, Proxy: ${proxyCount})
+# Total Failed: ${failedCount}
+# Total All: ${data.all.split('\n').filter(Boolean).length}
+
+## DIRECT SUCCESS (${directCount} URLs)
 ${data.direct}
 
-## PROXY SUCCESS (${data.proxy.split('\n').length} URLs)
+## PROXY SUCCESS (${proxyCount} URLs)
 ${data.proxy}
 
-## FAILED (${data.failed.split('\n').length} URLs)
+## FAILED (${failedCount} URLs)
 ${data.failed}
 
-## ALL URLS (${data.all.split('\n').length} URLs)
+## ALL URLS (${data.all.split('\n').filter(Boolean).length} URLs)
 ${data.all}
     `);
   } else {
