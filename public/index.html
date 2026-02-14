@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>URL Runner Dashboard</title>
+    <title>URL Runner Pro Dashboard</title>
     <style>
         * {
             margin: 0;
@@ -19,7 +19,7 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
         }
 
@@ -39,47 +39,6 @@
             gap: 10px;
         }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            animation: pulse 2s infinite;
-        }
-
-        .stat-card.green {
-            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            color: #333;
-        }
-
-        .stat-card.red {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-
-        .stat-card.yellow {
-            background: linear-gradient(135deg, #ffe259 0%, #ffa751 100%);
-            color: #333;
-        }
-
-        .stat-number {
-            font-size: 2.5em;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-
-        .stat-label {
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
-
         .live-indicator {
             display: inline-block;
             width: 10px;
@@ -96,13 +55,57 @@
             100% { opacity: 1; }
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
         }
 
-        .controls {
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card.green {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            color: #333;
+        }
+
+        .stat-card.blue {
+            background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+            color: #333;
+        }
+
+        .stat-card.yellow {
+            background: linear-gradient(135deg, #ffe259 0%, #ffa751 100%);
+            color: #333;
+        }
+
+        .stat-card.red {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .stat-number {
+            font-size: 2.2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .progress-section {
             background: white;
             border-radius: 15px;
             padding: 20px;
@@ -110,10 +113,72 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
-        .button-group {
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .url-categories {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .category-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .category-card.active {
+            border-color: #667eea;
+            transform: scale(1.02);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .category-card.direct { border-left: 5px solid #48bb78; }
+        .category-card.proxy { border-left: 5px solid #ecc94b; }
+        .category-card.failed { border-left: 5px solid #f56565; }
+        .category-card.pending { border-left: 5px solid #4299e1; }
+
+        .category-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .category-count {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .action-buttons {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            margin-bottom: 20px;
         }
 
         .btn {
@@ -130,18 +195,8 @@
             color: white;
         }
 
-        .btn-primary:hover {
-            background: #5a67d8;
-            transform: translateY(-2px);
-        }
-
         .btn-success {
             background: #48bb78;
-            color: white;
-        }
-
-        .btn-danger {
-            background: #f56565;
             color: white;
         }
 
@@ -150,24 +205,52 @@
             color: #333;
         }
 
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-info {
+            background: #4299e1;
+            color: white;
+        }
+
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
-        .url-list {
+        .main-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .url-list-container {
             background: white;
             border-radius: 15px;
             padding: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            max-height: 600px;
+            max-height: 500px;
             overflow-y: auto;
+        }
+
+        .url-list-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .url-item {
             display: flex;
             align-items: center;
-            padding: 12px;
+            padding: 10px;
             border-bottom: 1px solid #e2e8f0;
             animation: slideIn 0.3s ease;
         }
@@ -188,93 +271,57 @@
         }
 
         .status-badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8em;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7em;
             font-weight: bold;
-            margin-right: 15px;
-            min-width: 80px;
+            margin-right: 10px;
+            min-width: 60px;
             text-align: center;
         }
 
-        .status-ok {
-            background: #c6f6d5;
-            color: #22543d;
-        }
-
-        .status-proxy {
-            background: #feebc8;
-            color: #744210;
-        }
-
-        .status-fail {
-            background: #fed7d7;
-            color: #742a2a;
-        }
+        .badge-direct { background: #c6f6d5; color: #22543d; }
+        .badge-proxy { background: #feebc8; color: #744210; }
+        .badge-failed { background: #fed7d7; color: #742a2a; }
+        .badge-pending { background: #e2e8f0; color: #4a5568; }
 
         .url-text {
             flex: 1;
             color: #4a5568;
             word-break: break-all;
-            font-size: 0.9em;
+            font-size: 0.85em;
+            font-family: monospace;
         }
 
         .timestamp {
-            color: #718096;
-            font-size: 0.8em;
-            margin-left: 15px;
+            color: #a0aec0;
+            font-size: 0.7em;
+            margin-left: 10px;
             white-space: nowrap;
         }
 
-        .filter-section {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
-
-        .filter-btn {
-            padding: 8px 16px;
-            border: 1px solid #e2e8f0;
+        .export-options {
+            display: none;
+            position: absolute;
             background: white;
-            border-radius: 20px;
+            border-radius: 5px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            padding: 10px;
+            z-index: 100;
+        }
+
+        .export-options.show {
+            display: block;
+        }
+
+        .export-option {
+            padding: 8px 15px;
             cursor: pointer;
-            transition: all 0.3s;
+            border-radius: 3px;
         }
 
-        .filter-btn.active {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-
-        .filter-btn:hover {
+        .export-option:hover {
             background: #edf2f7;
-        }
-
-        .filter-btn.active:hover {
-            background: #5a67d8;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #718096;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
 
         .footer {
@@ -284,57 +331,26 @@
             opacity: 0.8;
         }
 
-        .progress-bar {
+        .search-box {
             width: 100%;
-            height: 4px;
-            background: #e2e8f0;
-            border-radius: 2px;
-            margin: 10px 0;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            transition: width 0.3s ease;
-        }
-
-        .config-panel {
-            background: #f7fafc;
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 15px;
-        }
-
-        .config-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .config-item label {
-            min-width: 100px;
-            color: #4a5568;
-            font-weight: bold;
-        }
-
-        .config-item input {
-            flex: 1;
-            padding: 8px;
+            padding: 10px;
             border: 1px solid #e2e8f0;
             border-radius: 5px;
-            font-family: monospace;
+            margin-bottom: 15px;
+            font-size: 0.9em;
         }
 
-        .worker-badge {
-            background: #667eea;
-            color: white;
-            padding: 4px 10px;
-            border-radius: 15px;
+        .copy-btn {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
             font-size: 0.8em;
-            display: inline-block;
-            margin-left: 10px;
+            margin-left: 5px;
+        }
+
+        .copy-btn:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -342,246 +358,426 @@
     <div class="container">
         <div class="header">
             <h1>
-                🚀 URL Runner Dashboard
+                🚀 URL Runner Pro Dashboard
                 <span class="live-indicator"></span>
-                <span class="worker-badge" id="workerCount">20 Workers</span>
             </h1>
-            <p>Real-time URL checking and monitoring system</p>
-            
+            <p>Real-time URL checking dengan kategori terpisah</p>
+
             <div class="stats-grid">
                 <div class="stat-card green">
-                    <div class="stat-label">Total Checked</div>
-                    <div class="stat-number" id="totalChecked">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Direct OK (JSON)</div>
-                    <div class="stat-number" id="directOk">0</div>
+                    <div class="stat-label">Direct Success</div>
+                    <div class="stat-number" id="directCount">0</div>
                 </div>
                 <div class="stat-card yellow">
-                    <div class="stat-label">Proxy OK (JSON)</div>
-                    <div class="stat-number" id="proxyOk">0</div>
+                    <div class="stat-label">Proxy Success</div>
+                    <div class="stat-number" id="proxyCount">0</div>
                 </div>
                 <div class="stat-card red">
                     <div class="stat-label">Failed</div>
-                    <div class="stat-number" id="failed">0</div>
+                    <div class="stat-number" id="failedCount">0</div>
+                </div>
+                <div class="stat-card blue">
+                    <div class="stat-label">Pending</div>
+                    <div class="stat-number" id="pendingCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Unique</div>
+                    <div class="stat-number" id="totalUnique">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Success Rate</div>
+                    <div class="stat-number" id="successRate">0%</div>
                 </div>
             </div>
+        </div>
 
+        <div class="progress-section">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span><strong>Overall Progress</strong></span>
+                <span id="progressText">0%</span>
+            </div>
             <div class="progress-bar">
-                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                <div class="progress-fill" id="progressFill" style="width: 0%">0%</div>
             </div>
         </div>
 
-        <div class="controls">
-            <div class="button-group">
-                <button class="btn btn-primary" onclick="clearHistory()">🗑️ Clear History</button>
-                <button class="btn btn-success" onclick="exportData()">📥 Export Data</button>
-                <button class="btn btn-warning" onclick="toggleAutoScroll()">📜 Toggle Auto-scroll</button>
-                <button class="btn btn-danger" onclick="forceRefresh()">🔄 Force Refresh</button>
+        <div class="url-categories">
+            <div class="category-card direct active" onclick="switchCategory('direct')">
+                <div class="category-title">
+                    <span>✅ Direct OK</span>
+                    <span class="copy-btn" onclick="copyCategory('direct'); event.stopPropagation();">📋 Copy</span>
+                </div>
+                <div class="category-count" id="cardDirectCount">0</div>
             </div>
-
-            <div class="config-panel">
-                <div class="config-item">
-                    <label>Source URL:</label>
-                    <input type="text" id="sourceUrl" readonly value="Loading...">
+            <div class="category-card proxy" onclick="switchCategory('proxy')">
+                <div class="category-title">
+                    <span>🔄 Proxy OK</span>
+                    <span class="copy-btn" onclick="copyCategory('proxy'); event.stopPropagation();">📋 Copy</span>
                 </div>
-                <div class="config-item">
-                    <label>CORS Proxy:</label>
-                    <input type="text" id="corsProxy" readonly value="Loading...">
+                <div class="category-count" id="cardProxyCount">0</div>
+            </div>
+            <div class="category-card failed" onclick="switchCategory('failed')">
+                <div class="category-title">
+                    <span>❌ Failed</span>
+                    <span class="copy-btn" onclick="copyCategory('failed'); event.stopPropagation();">📋 Copy</span>
                 </div>
+                <div class="category-count" id="cardFailedCount">0</div>
+            </div>
+            <div class="category-card pending" onclick="switchCategory('pending')">
+                <div class="category-title">
+                    <span>⏳ Pending</span>
+                    <span class="copy-btn" onclick="copyCategory('pending'); event.stopPropagation();">📋 Copy</span>
+                </div>
+                <div class="category-count" id="cardPendingCount">0</div>
             </div>
         </div>
 
-        <div class="url-list" id="urlList">
-            <div class="filter-section">
-                <button class="filter-btn active" onclick="filterResults('all')">All</button>
-                <button class="filter-btn" onclick="filterResults('direct')">Direct OK</button>
-                <button class="filter-btn" onclick="filterResults('proxy')">Proxy OK</button>
-                <button class="filter-btn" onclick="filterResults('failed')">Failed</button>
+        <div class="action-buttons">
+            <button class="btn btn-primary" onclick="refreshData()">🔄 Refresh</button>
+            <button class="btn btn-success" onclick="exportAll()">📥 Export All</button>
+            <button class="btn btn-info" onclick="exportCategory()">📤 Export Category</button>
+            <button class="btn btn-warning" onclick="toggleAutoRefresh()">⏱️ Auto: ON</button>
+            <button class="btn btn-danger" onclick="resetDatabase()">⚠️ Reset Database</button>
+        </div>
+
+        <div class="main-panel">
+            <!-- URL List Panel -->
+            <div class="url-list-container">
+                <div class="url-list-title">
+                    <span id="currentCategoryTitle">📋 Direct URLs</span>
+                    <span id="categoryCount">0 URLs</span>
+                </div>
+                
+                <input type="text" class="search-box" id="searchInput" placeholder="Search URLs..." onkeyup="searchUrls()">
+                
+                <div id="urlList">
+                    <div class="loading">Loading...</div>
+                </div>
             </div>
-            <div id="resultsContainer">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    Waiting for data...
+
+            <!-- History Panel -->
+            <div class="url-list-container">
+                <div class="url-list-title">
+                    <span>📜 Processing History</span>
+                    <span id="historyCount">0 items</span>
+                </div>
+                
+                <div id="historyList">
+                    <div class="loading">Loading...</div>
                 </div>
             </div>
         </div>
 
         <div class="footer">
-            <p>🔴 Live updates every 2 seconds • Last update: <span id="lastUpdate">-</span></p>
+            <p>Last update: <span id="lastUpdate">-</span> | Uptime: <span id="uptime">-</span></p>
         </div>
     </div>
 
     <script>
         // State management
-        let history = [];
-        let filter = 'all';
-        let autoScroll = true;
-        let workers = 20;
+        let currentCategory = 'direct';
+        let autoRefresh = true;
+        let refreshInterval = 3000;
+        let stats = {};
+        let urlCache = {};
 
-        // Load config from server
-        async function loadConfig() {
+        // Load data from server
+        async function fetchStats() {
             try {
-                const response = await fetch('/config');
-                const config = await response.json();
-                document.getElementById('sourceUrl').value = config.sourceUrl;
-                document.getElementById('corsProxy').value = config.corsProxy;
-                workers = config.workers || 20;
-                document.getElementById('workerCount').textContent = workers + ' Workers';
-            } catch (error) {
-                console.error('Failed to load config:', error);
-            }
-        }
-
-        // Fetch latest results
-        async function fetchResults() {
-            try {
-                const response = await fetch('/results');
+                const response = await fetch('/api/stats');
                 const data = await response.json();
-                
-                if (data.results && data.results.length > 0) {
-                    // Add new results to history
-                    const newResults = data.results.filter(newItem => 
-                        !history.some(oldItem => 
-                            oldItem.url === newItem.url && 
-                            oldItem.timestamp === newItem.timestamp
-                        )
-                    );
-                    
-                    history = [...newResults, ...history].slice(0, 1000); // Keep last 1000 items
-                    updateDisplay();
-                }
-                
-                updateStats(data.stats || {
-                    total: history.length,
-                    direct: history.filter(r => r.status === 'direct').length,
-                    proxy: history.filter(r => r.status === 'proxy').length,
-                    failed: history.filter(r => r.status === 'failed').length
-                });
-                
-                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                stats = data;
+                updateStats(data);
             } catch (error) {
-                console.error('Failed to fetch results:', error);
+                console.error('Failed to fetch stats:', error);
             }
         }
 
-        // Update statistics
-        function updateStats(stats) {
-            document.getElementById('totalChecked').textContent = stats.total || history.length;
-            document.getElementById('directOk').textContent = stats.direct || history.filter(r => r.status === 'direct').length;
-            document.getElementById('proxyOk').textContent = stats.proxy || history.filter(r => r.status === 'proxy').length;
-            document.getElementById('failed').textContent = stats.failed || history.filter(r => r.status === 'failed').length;
-            
-            const total = history.length;
-            const progress = total > 0 ? (history.filter(r => r.status !== 'failed').length / total) * 100 : 0;
-            document.getElementById('progressFill').style.width = progress + '%';
+        async function fetchUrls(category) {
+            try {
+                const response = await fetch(`/api/urls/${category}`);
+                const data = await response.json();
+                urlCache[category] = data.urls || [];
+                displayUrls(category, data.urls || []);
+                
+                // Update count in title
+                document.getElementById('categoryCount').textContent = 
+                    `${data.urls?.length || 0} URLs`;
+            } catch (error) {
+                console.error(`Failed to fetch ${category} URLs:`, error);
+            }
         }
 
-        // Update display with filtered results
-        function updateDisplay() {
-            const container = document.getElementById('resultsContainer');
-            
-            let filteredResults = history;
-            if (filter === 'direct') {
-                filteredResults = history.filter(r => r.status === 'direct');
-            } else if (filter === 'proxy') {
-                filteredResults = history.filter(r => r.status === 'proxy');
-            } else if (filter === 'failed') {
-                filteredResults = history.filter(r => r.status === 'failed');
+        async function fetchHistory() {
+            try {
+                const response = await fetch('/api/history?limit=50');
+                const history = await response.json();
+                displayHistory(history);
+                document.getElementById('historyCount').textContent = 
+                    `${history.length} items`;
+            } catch (error) {
+                console.error('Failed to fetch history:', error);
             }
+        }
 
-            if (filteredResults.length === 0) {
-                container.innerHTML = '<div class="loading">📭 No results to display</div>';
+        async function fetchConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const config = await response.json();
+                document.getElementById('uptime').textContent = 
+                    formatUptime(config.uptime);
+            } catch (error) {
+                console.error('Failed to fetch config:', error);
+            }
+        }
+
+        // Update statistics display
+        function updateStats(data) {
+            const counts = data.counts || {};
+            const stats = data.stats || {};
+            
+            document.getElementById('directCount').textContent = counts.direct || 0;
+            document.getElementById('proxyCount').textContent = counts.proxy || 0;
+            document.getElementById('failedCount').textContent = counts.failed || 0;
+            document.getElementById('pendingCount').textContent = counts.pending || 0;
+            document.getElementById('totalUnique').textContent = counts.total || 0;
+            
+            document.getElementById('cardDirectCount').textContent = counts.direct || 0;
+            document.getElementById('cardProxyCount').textContent = counts.proxy || 0;
+            document.getElementById('cardFailedCount').textContent = counts.failed || 0;
+            document.getElementById('cardPendingCount').textContent = counts.pending || 0;
+            
+            const successRate = stats.successRate || '0';
+            document.getElementById('successRate').textContent = successRate + '%';
+            
+            const total = counts.direct + counts.proxy + counts.failed;
+            if (total > 0) {
+                const progress = ((counts.direct + counts.proxy) / total * 100).toFixed(1);
+                document.getElementById('progressFill').style.width = progress + '%';
+                document.getElementById('progressFill').textContent = progress + '%';
+                document.getElementById('progressText').textContent = progress + '%';
+            }
+            
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        }
+
+        // Display URLs
+        function displayUrls(category, urls) {
+            const container = document.getElementById('urlList');
+            
+            if (!urls || urls.length === 0) {
+                container.innerHTML = '<div class="loading">📭 No URLs in this category</div>';
                 return;
             }
 
             let html = '';
-            filteredResults.forEach(result => {
-                let statusClass = 'status-fail';
-                let statusText = '❌ Failed';
-                
-                if (result.status === 'direct') {
-                    statusClass = 'status-ok';
-                    statusText = '✅ Direct OK';
-                } else if (result.status === 'proxy') {
-                    statusClass = 'status-proxy';
-                    statusText = '🔄 Proxy OK';
-                }
+            urls.slice(0, 100).forEach(url => {
+                let badgeClass = 'badge-' + category;
+                let badgeText = {
+                    'direct': '✅ DIRECT',
+                    'proxy': '🔄 PROXY',
+                    'failed': '❌ FAILED',
+                    'pending': '⏳ PENDING'
+                }[category] || category;
 
                 html += `
                     <div class="url-item">
-                        <span class="status-badge ${statusClass}">${statusText}</span>
-                        <span class="url-text">${result.url}</span>
-                        <span class="timestamp">${result.timestamp}</span>
+                        <span class="status-badge ${badgeClass}">${badgeText}</span>
+                        <span class="url-text">${escapeHtml(url)}</span>
+                    </div>
+                `;
+            });
+
+            if (urls.length > 100) {
+                html += `<div class="url-item">... and ${urls.length - 100} more</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // Display history
+        function displayHistory(history) {
+            const container = document.getElementById('historyList');
+            
+            if (!history || history.length === 0) {
+                container.innerHTML = '<div class="loading">📭 No history</div>';
+                return;
+            }
+
+            let html = '';
+            history.forEach(item => {
+                let badgeClass = 'badge-' + item.status;
+                let badgeText = {
+                    'direct': '✅ DIRECT',
+                    'proxy': '🔄 PROXY',
+                    'failed': '❌ FAILED'
+                }[item.status] || item.status;
+
+                html += `
+                    <div class="url-item">
+                        <span class="status-badge ${badgeClass}">${badgeText}</span>
+                        <span class="url-text">${escapeHtml(item.url)}</span>
+                        <span class="timestamp">${formatTime(item.timestamp)}</span>
                     </div>
                 `;
             });
 
             container.innerHTML = html;
-
-            // Auto-scroll to bottom if enabled
-            if (autoScroll) {
-                const urlList = document.getElementById('urlList');
-                urlList.scrollTop = urlList.scrollHeight;
-            }
         }
 
-        // Filter results
-        function filterResults(type) {
-            filter = type;
+        // Switch category
+        function switchCategory(category) {
+            currentCategory = category;
             
-            // Update active button
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.classList.remove('active');
+            // Update active state
+            document.querySelectorAll('.category-card').forEach(card => {
+                card.classList.remove('active');
             });
-            event.target.classList.add('active');
+            event.currentTarget.classList.add('active');
             
-            updateDisplay();
+            // Update title
+            const titles = {
+                'direct': '✅ Direct Success URLs',
+                'proxy': '🔄 Proxy Success URLs',
+                'failed': '❌ Failed URLs',
+                'pending': '⏳ Pending URLs'
+            };
+            document.getElementById('currentCategoryTitle').textContent = titles[category];
+            
+            // Load URLs
+            fetchUrls(category);
         }
 
-        // Toggle auto-scroll
-        function toggleAutoScroll() {
-            autoScroll = !autoScroll;
-            alert(`Auto-scroll ${autoScroll ? 'enabled' : 'disabled'}`);
+        // Search URLs
+        function searchUrls() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const urls = urlCache[currentCategory] || [];
+            
+            if (!searchTerm) {
+                displayUrls(currentCategory, urls);
+                return;
+            }
+            
+            const filtered = urls.filter(url => 
+                url.toLowerCase().includes(searchTerm)
+            );
+            
+            displayUrls(currentCategory, filtered);
+            document.getElementById('categoryCount').textContent = 
+                `${filtered.length} URLs (filtered)`;
         }
 
-        // Clear history
-        async function clearHistory() {
-            if (confirm('Clear all history?')) {
-                history = [];
-                updateDisplay();
-                updateStats({ total: 0, direct: 0, proxy: 0, failed: 0 });
+        // Copy category URLs
+        async function copyCategory(category) {
+            try {
+                const response = await fetch(`/api/urls/${category}?format=txt`);
+                const text = await response.text();
+                await navigator.clipboard.writeText(text);
+                alert(`📋 ${category} URLs copied to clipboard!`);
+            } catch (error) {
+                console.error('Failed to copy:', error);
+                alert('Failed to copy URLs');
             }
         }
 
-        // Export data
-        function exportData() {
-            const dataStr = JSON.stringify(history, null, 2);
-            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-            
-            const exportFileDefaultName = `url-runner-export-${new Date().toISOString()}.json`;
-            
-            const linkElement = document.createElement('a');
-            linkElement.setAttribute('href', dataUri);
-            linkElement.setAttribute('download', exportFileDefaultName);
-            linkElement.click();
+        // Export all data
+        async function exportAll() {
+            try {
+                const response = await fetch('/api/export/txt');
+                const text = await response.text();
+                
+                const blob = new Blob([text], { type: 'text/plain' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `url-export-${new Date().toISOString()}.txt`;
+                a.click();
+            } catch (error) {
+                console.error('Failed to export:', error);
+                alert('Failed to export data');
+            }
         }
 
-        // Force refresh
-        function forceRefresh() {
-            fetchResults();
+        // Export current category
+        async function exportCategory() {
+            try {
+                const response = await fetch(`/api/urls/${currentCategory}?format=txt`);
+                const text = await response.text();
+                
+                const blob = new Blob([text], { type: 'text/plain' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${currentCategory}-urls-${new Date().toISOString()}.txt`;
+                a.click();
+            } catch (error) {
+                console.error('Failed to export category:', error);
+                alert('Failed to export category');
+            }
+        }
+
+        // Reset database
+        async function resetDatabase() {
+            if (confirm('⚠️ Are you sure you want to reset the entire database? This action cannot be undone!')) {
+                try {
+                    const response = await fetch('/api/reset', { method: 'POST' });
+                    const result = await response.json();
+                    alert('Database reset successfully!');
+                    refreshData();
+                } catch (error) {
+                    console.error('Failed to reset database:', error);
+                    alert('Failed to reset database');
+                }
+            }
+        }
+
+        // Toggle auto refresh
+        function toggleAutoRefresh() {
+            autoRefresh = !autoRefresh;
+            const btn = event.target;
+            btn.textContent = autoRefresh ? '⏱️ Auto: ON' : '⏱️ Auto: OFF';
+        }
+
+        // Refresh all data
+        function refreshData() {
+            fetchStats();
+            fetchUrls(currentCategory);
+            fetchHistory();
+            fetchConfig();
+        }
+
+        // Utility functions
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatTime(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString();
+        }
+
+        function formatUptime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${hours}h ${minutes}m ${secs}s`;
         }
 
         // Initialize and start polling
-        async function init() {
-            await loadConfig();
-            await fetchResults();
+        function init() {
+            refreshData();
             
-            // Poll every 2 seconds
-            setInterval(fetchResults, 2000);
+            setInterval(() => {
+                if (autoRefresh) {
+                    refreshData();
+                }
+            }, refreshInterval);
         }
 
-        // Start the dashboard
+        // Start
         init();
     </script>
 </body>
