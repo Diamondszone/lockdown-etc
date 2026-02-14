@@ -139,6 +139,24 @@
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
 
+        /* Sembunyikan segmen dengan width 0% */
+        .progress-segment[style*="width: 0%"] {
+            display: none;
+        }
+
+        /* Atur border radius untuk segmen pertama dan terakhir */
+        .progress-segment:first-child {
+            border-radius: 15px 0 0 15px;
+        }
+
+        .progress-segment:last-child {
+            border-radius: 0 15px 15px 0;
+        }
+
+        .progress-segment:only-child {
+            border-radius: 15px;
+        }
+
         .segment-success { background: #48bb78; }
         .segment-failed { background: #f56565; }
 
@@ -428,7 +446,7 @@
                 </div>
                 <div class="category-count" id="cardSuccessCount">0</div>
                 <div style="font-size: 0.9em; opacity: 0.8; margin-top: 5px;">
-                    <span id="directCount">0</span> Direct · <span id="proxyCount">0</span> Proxy
+                    📱 <span id="directCount">0</span> Direct · 🔄 <span id="proxyCount">0</span> Proxy
                 </div>
             </div>
             <div class="category-card failed" onclick="switchCategory('failed')">
@@ -504,7 +522,7 @@
             try {
                 let endpoint = category;
                 if (category === 'success') {
-                    endpoint = 'success'; // Ambil semua success URLs
+                    endpoint = 'success';
                 }
                 
                 const response = await fetch(`/api/urls/${endpoint}`);
@@ -542,7 +560,7 @@
             }
         }
 
-        // Update statistics display - perbaikan bagian
+        // Update statistics display
         function updateStats(data) {
             const counts = data.counts || {};
             const statsData = data.stats || {};
@@ -592,13 +610,27 @@
             document.getElementById('successPercent').textContent = successPercentFixed + '%';
             document.getElementById('failedPercent').textContent = failedPercentFixed + '%';
             
-            // Update progress bar width
-            document.getElementById('successProgress').style.width = successPercent + '%';
-            document.getElementById('failedProgress').style.width = failedPercent + '%';
+            // Update progress bar
+            const successProgress = document.getElementById('successProgress');
+            const failedProgress = document.getElementById('failedProgress');
+            const successText = document.getElementById('successProgressText');
+            const failedText = document.getElementById('failedProgressText');
             
-            // Update text di dalam progress bar
-            document.getElementById('successProgressText').textContent = successPercentFixed + '%';
-            document.getElementById('failedProgressText').textContent = failedPercentFixed + '%';
+            // Success segment
+            if (successPercent > 0) {
+                successProgress.style.width = successPercent + '%';
+                successText.textContent = successPercentFixed + '%';
+            } else {
+                successProgress.style.width = '0%';
+            }
+            
+            // Failed segment
+            if (failedPercent > 0) {
+                failedProgress.style.width = failedPercent + '%';
+                failedText.textContent = failedPercentFixed + '%';
+            } else {
+                failedProgress.style.width = '0%';
+            }
             
             // Update success rate
             const totalAttempts = totalSuccess + failed;
