@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Runner Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            animation: pulse 2s infinite;
+        }
+
+        .stat-card.green {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            color: #333;
+        }
+
+        .stat-card.red {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .stat-card.yellow {
+            background: linear-gradient(135deg, #ffe259 0%, #ffa751 100%);
+            color: #333;
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .live-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #4CAF50;
+            border-radius: 50%;
+            margin-left: 10px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .controls {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ecc94b;
+            color: #333;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .url-list {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .url-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .url-item:hover {
+            background: #f7fafc;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-right: 15px;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .status-ok {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status-proxy {
+            background: #feebc8;
+            color: #744210;
+        }
+
+        .status-fail {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .url-text {
+            flex: 1;
+            color: #4a5568;
+            word-break: break-all;
+            font-size: 0.9em;
+        }
+
+        .timestamp {
+            color: #718096;
+            font-size: 0.8em;
+            margin-left: 15px;
+            white-space: nowrap;
+        }
+
+        .filter-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .filter-btn:hover {
+            background: #edf2f7;
+        }
+
+        .filter-btn.active:hover {
+            background: #5a67d8;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: white;
+            opacity: 0.8;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        .config-panel {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .config-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .config-item label {
+            min-width: 100px;
+            color: #4a5568;
+            font-weight: bold;
+        }
+
+        .config-item input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+
+        .worker-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            display: inline-block;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                🚀 URL Runner Dashboard
+                <span class="live-indicator"></span>
+                <span class="worker-badge" id="workerCount">20 Workers</span>
+            </h1>
+            <p>Real-time URL checking and monitoring system</p>
+            
+            <div class="stats-grid">
+                <div class="stat-card green">
+                    <div class="stat-label">Total Checked</div>
+                    <div class="stat-number" id="totalChecked">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Direct OK (JSON)</div>
+                    <div class="stat-number" id="directOk">0</div>
+                </div>
+                <div class="stat-card yellow">
+                    <div class="stat-label">Proxy OK (JSON)</div>
+                    <div class="stat-number" id="proxyOk">0</div>
+                </div>
+                <div class="stat-card red">
+                    <div class="stat-label">Failed</div>
+                    <div class="stat-number" id="failed">0</div>
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="clearHistory()">🗑️ Clear History</button>
+                <button class="btn btn-success" onclick="exportData()">📥 Export Data</button>
+                <button class="btn btn-warning" onclick="toggleAutoScroll()">📜 Toggle Auto-scroll</button>
+                <button class="btn btn-danger" onclick="forceRefresh()">🔄 Force Refresh</button>
+            </div>
+
+            <div class="config-panel">
+                <div class="config-item">
+                    <label>Source URL:</label>
+                    <input type="text" id="sourceUrl" readonly value="Loading...">
+                </div>
+                <div class="config-item">
+                    <label>CORS Proxy:</label>
+                    <input type="text" id="corsProxy" readonly value="Loading...">
+                </div>
+            </div>
+        </div>
+
+        <div class="url-list" id="urlList">
+            <div class="filter-section">
+                <button class="filter-btn active" onclick="filterResults('all')">All</button>
+                <button class="filter-btn" onclick="filterResults('direct')">Direct OK</button>
+                <button class="filter-btn" onclick="filterResults('proxy')">Proxy OK</button>
+                <button class="filter-btn" onclick="filterResults('failed')">Failed</button>
+            </div>
+            <div id="resultsContainer">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Waiting for data...
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>🔴 Live updates every 2 seconds • Last update: <span id="lastUpdate">-</span></p>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let history = [];
+        let filter = 'all';
+        let autoScroll = true;
+        let workers = 20;
+
+        // Load config from server
+        async function loadConfig() {
+            try {
+                const response = await fetch('/config');
+                const config = await response.json();
+                document.getElementById('sourceUrl').value = config.sourceUrl;
+                document.getElementById('corsProxy').value = config.corsProxy;
+                workers = config.workers || 20;
+                document.getElementById('workerCount').textContent = workers + ' Workers';
+            } catch (error) {
+                console.error('Failed to load config:', error);
+            }
+        }
+
+        // Fetch latest results
+        async function fetchResults() {
+            try {
+                const response = await fetch('/results');
+                const data = await response.json();
+                
+                if (data.results && data.results.length > 0) {
+                    // Add new results to history
+                    const newResults = data.results.filter(newItem => 
+                        !history.some(oldItem => 
+                            oldItem.url === newItem.url && 
+                            oldItem.timestamp === newItem.timestamp
+                        )
+                    );
+                    
+                    history = [...newResults, ...history].slice(0, 1000); // Keep last 1000 items
+                    updateDisplay();
+                }
+                
+                updateStats(data.stats || {
+                    total: history.length,
+                    direct: history.filter(r => r.status === 'direct').length,
+                    proxy: history.filter(r => r.status === 'proxy').length,
+                    failed: history.filter(r => r.status === 'failed').length
+                });
+                
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+            } catch (error) {
+                console.error('Failed to fetch results:', error);
+            }
+        }
+
+        // Update statistics
+        function updateStats(stats) {
+            document.getElementById('totalChecked').textContent = stats.total || history.length;
+            document.getElementById('directOk').textContent = stats.direct || history.filter(r => r.status === 'direct').length;
+            document.getElementById('proxyOk').textContent = stats.proxy || history.filter(r => r.status === 'proxy').length;
+            document.getElementById('failed').textContent = stats.failed || history.filter(r => r.status === 'failed').length;
+            
+            const total = history.length;
+            const progress = total > 0 ? (history.filter(r => r.status !== 'failed').length / total) * 100 : 0;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        // Update display with filtered results
+        function updateDisplay() {
+            const container = document.getElementById('resultsContainer');
+            
+            let filteredResults = history;
+            if (filter === 'direct') {
+                filteredResults = history.filter(r => r.status === 'direct');
+            } else if (filter === 'proxy') {
+                filteredResults = history.filter(r => r.status === 'proxy');
+            } else if (filter === 'failed') {
+                filteredResults = history.filter(r => r.status === 'failed');
+            }
+
+            if (filteredResults.length === 0) {
+                container.innerHTML = '<div class="loading">📭 No results to display</div>';
+                return;
+            }
+
+            let html = '';
+            filteredResults.forEach(result => {
+                let statusClass = 'status-fail';
+                let statusText = '❌ Failed';
+                
+                if (result.status === 'direct') {
+                    statusClass = 'status-ok';
+                    statusText = '✅ Direct OK';
+                } else if (result.status === 'proxy') {
+                    statusClass = 'status-proxy';
+                    statusText = '🔄 Proxy OK';
+                }
+
+                html += `
+                    <div class="url-item">
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                        <span class="url-text">${result.url}</span>
+                        <span class="timestamp">${result.timestamp}</span>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            // Auto-scroll to bottom if enabled
+            if (autoScroll) {
+                const urlList = document.getElementById('urlList');
+                urlList.scrollTop = urlList.scrollHeight;
+            }
+        }
+
+        // Filter results
+        function filterResults(type) {
+            filter = type;
+            
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            updateDisplay();
+        }
+
+        // Toggle auto-scroll
+        function toggleAutoScroll() {
+            autoScroll = !autoScroll;
+            alert(`Auto-scroll ${autoScroll ? 'enabled' : 'disabled'}`);
+        }
+
+        // Clear history
+        async function clearHistory() {
+            if (confirm('Clear all history?')) {
+                history = [];
+                updateDisplay();
+                updateStats({ total: 0, direct: 0, proxy: 0, failed: 0 });
+            }
+        }
+
+        // Export data
+        function exportData() {
+            const dataStr = JSON.stringify(history, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `url-runner-export-${new Date().toISOString()}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        // Force refresh
+        function forceRefresh() {
+            fetchResults();
+        }
+
+        // Initialize and start polling
+        async function init() {
+            await loadConfig();
+            await fetchResults();
+            
+            // Poll every 2 seconds
+            setInterval(fetchResults, 2000);
+        }
+
+        // Start the dashboard
+        init();
+    </script>
+</body>
+</html>
