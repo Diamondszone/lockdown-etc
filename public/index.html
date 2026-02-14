@@ -357,14 +357,66 @@
             </div>
         </div>
 
+        <!-- Progress Section yang diperbaiki -->
         <div class="progress-section">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                <span><strong>Success vs Failed Ratio</strong></span>
-                <span id="distributionText">Success: 0% | Failed: 0%</span>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                <div>
+                    <span style="font-weight: bold; font-size: 1.1em;">📊 Success vs Failed Ratio</span>
+                </div>
+                <div style="display: flex; gap: 20px;">
+                    <span style="color: #48bb78;">
+                        <strong>✅ Success:</strong> <span id="successPercent">0%</span>
+                    </span>
+                    <span style="color: #f56565;">
+                        <strong>❌ Failed:</strong> <span id="failedPercent">0%</span>
+                    </span>
+                </div>
             </div>
-            <div class="progress-bar">
-                <div class="progress-segment segment-success" id="successProgress" style="width: 0%">0%</div>
-                <div class="progress-segment segment-failed" id="failedProgress" style="width: 0%">0%</div>
+            
+            <!-- Progress Bar dengan tooltip -->
+            <div class="progress-bar" style="margin-bottom: 10px;" title="Success vs Failed distribution">
+                <div class="progress-segment segment-success" id="successProgress" style="width: 0%">
+                    <span id="successProgressText">0%</span>
+                </div>
+                <div class="progress-segment segment-failed" id="failedProgress" style="width: 0%">
+                    <span id="failedProgressText">0%</span>
+                </div>
+            </div>
+            
+            <!-- Detail angka -->
+            <div style="display: flex; justify-content: space-between; align-items: center; background: #f7fafc; padding: 12px; border-radius: 8px; margin-top: 10px;">
+                <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                    <div>
+                        <span style="color: #4a5568; font-size: 0.9em;">✅ Success</span>
+                        <div style="font-weight: bold; font-size: 1.2em; color: #48bb78;">
+                            <span id="totalSuccessDetail">0</span> URLs
+                        </div>
+                        <div style="font-size: 0.85em; color: #718096; margin-top: 3px;">
+                            📱 <span id="directCountDetail">0</span> Direct · 🔄 <span id="proxyCountDetail">0</span> Proxy
+                        </div>
+                    </div>
+                    <div>
+                        <span style="color: #4a5568; font-size: 0.9em;">❌ Failed</span>
+                        <div style="font-weight: bold; font-size: 1.2em; color: #f56565;">
+                            <span id="failedCountDetail">0</span> URLs
+                        </div>
+                    </div>
+                    <div>
+                        <span style="color: #4a5568; font-size: 0.9em;">⏳ Pending</span>
+                        <div style="font-weight: bold; font-size: 1.2em; color: #4299e1;">
+                            <span id="pendingCountDetail">0</span> URLs
+                        </div>
+                    </div>
+                    <div>
+                        <span style="color: #4a5568; font-size: 0.9em;">📈 Total Processed</span>
+                        <div style="font-weight: bold; font-size: 1.2em; color: #667eea;">
+                            <span id="totalProcessedDetail">0</span> URLs
+                        </div>
+                    </div>
+                </div>
+                <div style="background: #ebf4ff; padding: 8px 15px; border-radius: 20px;">
+                    <span style="color: #667eea; font-weight: bold;">⭐ Success Rate: <span id="successRateDetail">0%</span></span>
+                </div>
             </div>
         </div>
 
@@ -490,7 +542,7 @@
             }
         }
 
-        // Update statistics display
+        // Update statistics display - perbaikan bagian
         function updateStats(data) {
             const counts = data.counts || {};
             const statsData = data.stats || {};
@@ -500,36 +552,59 @@
             const pending = counts.pending || 0;
             const direct = counts.direct || 0;
             const proxy = counts.proxy || 0;
+            const totalProcessed = statsData.totalProcessed || 0;
             
+            // Update statistik utama
             document.getElementById('totalSuccess').textContent = totalSuccess;
             document.getElementById('failedCount').textContent = failed;
             document.getElementById('pendingCount').textContent = pending;
-            document.getElementById('totalProcessed').textContent = statsData.totalProcessed || 0;
             
+            // Update detail di progress section
+            document.getElementById('totalSuccessDetail').textContent = totalSuccess;
+            document.getElementById('failedCountDetail').textContent = failed;
+            document.getElementById('pendingCountDetail').textContent = pending;
+            document.getElementById('totalProcessedDetail').textContent = totalProcessed;
+            
+            document.getElementById('directCountDetail').textContent = direct;
+            document.getElementById('proxyCountDetail').textContent = proxy;
+            
+            // Update card counts
             document.getElementById('cardSuccessCount').textContent = totalSuccess;
             document.getElementById('cardFailedCount').textContent = failed;
             
             document.getElementById('directCount').textContent = direct;
             document.getElementById('proxyCount').textContent = proxy;
             
+            // Hitung persentase
             const total = totalSuccess + failed;
-            const successRate = total > 0 ? ((totalSuccess / total) * 100).toFixed(1) : 0;
-            document.getElementById('successRate').textContent = successRate + '%';
+            let successPercent = 0;
+            let failedPercent = 0;
             
-            // Update progress bar
             if (total > 0) {
-                const successPercent = (totalSuccess / total * 100).toFixed(1);
-                const failedPercent = (failed / total * 100).toFixed(1);
-                
-                document.getElementById('successProgress').style.width = successPercent + '%';
-                document.getElementById('successProgress').textContent = successPercent + '%';
-                
-                document.getElementById('failedProgress').style.width = failedPercent + '%';
-                document.getElementById('failedProgress').textContent = failedPercent + '%';
-                
-                document.getElementById('distributionText').textContent = 
-                    `Success: ${successPercent}% | Failed: ${failedPercent}%`;
+                successPercent = (totalSuccess / total * 100);
+                failedPercent = (failed / total * 100);
             }
+            
+            // Update persentase
+            const successPercentFixed = successPercent.toFixed(1);
+            const failedPercentFixed = failedPercent.toFixed(1);
+            
+            document.getElementById('successPercent').textContent = successPercentFixed + '%';
+            document.getElementById('failedPercent').textContent = failedPercentFixed + '%';
+            
+            // Update progress bar width
+            document.getElementById('successProgress').style.width = successPercent + '%';
+            document.getElementById('failedProgress').style.width = failedPercent + '%';
+            
+            // Update text di dalam progress bar
+            document.getElementById('successProgressText').textContent = successPercentFixed + '%';
+            document.getElementById('failedProgressText').textContent = failedPercentFixed + '%';
+            
+            // Update success rate
+            const totalAttempts = totalSuccess + failed;
+            const successRate = totalAttempts > 0 ? ((totalSuccess / totalAttempts) * 100).toFixed(1) : 0;
+            document.getElementById('successRate').textContent = successRate + '%';
+            document.getElementById('successRateDetail').textContent = successRate + '%';
             
             document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
         }
