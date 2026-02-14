@@ -150,7 +150,7 @@
 
         .url-categories {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 15px;
             margin-bottom: 20px;
         }
@@ -170,11 +170,10 @@
             box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
         }
 
-        .category-card.success { border-left: 5px solid #48bb78; }
+        .category-card.success { border-left: 5px solid #4299e1; }
         .category-card.direct { border-left: 5px solid #48bb78; }
         .category-card.proxy { border-left: 5px solid #ecc94b; }
         .category-card.failed { border-left: 5px solid #f56565; }
-        .category-card.pending { border-left: 5px solid #4299e1; }
 
         .category-title {
             font-size: 1em;
@@ -279,7 +278,7 @@
         .badge-direct { background: #48bb78; color: white; }
         .badge-proxy { background: #ecc94b; color: #333; }
         .badge-failed { background: #f56565; color: white; }
-        .badge-pending { background: #a0aec0; color: white; }
+        .badge-success { background: #4299e1; color: white; }
 
         .url-text {
             flex: 1;
@@ -312,25 +311,18 @@
             font-size: 0.9em;
         }
 
-        .flow-diagram {
-            background: #f7fafc;
-            border-radius: 10px;
-            padding: 15px;
-            margin: 15px 0;
+        .copy-btn {
+            background: none;
+            border: none;
+            color: #667eea;
+            cursor: pointer;
             font-size: 0.9em;
-            border-left: 4px solid #667eea;
+            padding: 2px 5px;
+            border-radius: 3px;
         }
 
-        .flow-step {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 5px 0;
-        }
-
-        .flow-arrow {
-            color: #a0aec0;
-            margin: 0 10px;
+        .copy-btn:hover {
+            background: #edf2f7;
         }
     </style>
 </head>
@@ -342,50 +334,30 @@
                 <span class="badge-info">Direct → Proxy → Failed</span>
                 <span class="live-indicator"></span>
             </h1>
-            
-            <div class="flow-diagram">
-                <div class="flow-step">
-                    <span>1️⃣ Coba DIRECT</span>
-                    <span class="flow-arrow">➡️</span>
-                    <span style="color: #48bb78;">Jika sukses → DIRECT SUCCESS</span>
-                </div>
-                <div class="flow-step">
-                    <span>2️⃣ Jika gagal</span>
-                    <span class="flow-arrow">➡️</span>
-                    <span>Coba PROXY</span>
-                    <span class="flow-arrow">➡️</span>
-                    <span style="color: #ecc94b;">Jika sukses → PROXY SUCCESS</span>
-                </div>
-                <div class="flow-step">
-                    <span>3️⃣ Jika gagal juga</span>
-                    <span class="flow-arrow">➡️</span>
-                    <span style="color: #f56565;">FAILED</span>
-                </div>
-            </div>
 
             <div class="stats-grid">
                 <div class="stat-card green">
-                    <div class="stat-label">✅ TOTAL SUCCESS</div>
-                    <div class="stat-number" id="totalSuccess">0</div>
-                </div>
-                <div class="stat-card green">
-                    <div class="stat-label">📱 Direct</div>
+                    <div class="stat-label">📱 DIRECT</div>
                     <div class="stat-number" id="directCount">0</div>
                 </div>
                 <div class="stat-card yellow">
-                    <div class="stat-label">🔄 Proxy</div>
+                    <div class="stat-label">🔄 PROXY</div>
                     <div class="stat-number" id="proxyCount">0</div>
                 </div>
+                <div class="stat-card blue">
+                    <div class="stat-label">✅ ALL SUCCESS</div>
+                    <div class="stat-number" id="totalSuccess">0</div>
+                </div>
                 <div class="stat-card red">
-                    <div class="stat-label">❌ Failed</div>
+                    <div class="stat-label">❌ FAILED</div>
                     <div class="stat-number" id="failedCount">0</div>
                 </div>
-                <div class="stat-card blue">
-                    <div class="stat-label">⏳ Pending</div>
+                <div class="stat-card">
+                    <div class="stat-label">⏳ PENDING</div>
                     <div class="stat-number" id="pendingCount">0</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">📊 Success Rate</div>
+                    <div class="stat-label">📊 SUCCESS RATE</div>
                     <div class="stat-number" id="successRate">0%</div>
                 </div>
             </div>
@@ -404,14 +376,7 @@
         </div>
 
         <div class="url-categories">
-            <div class="category-card success active" onclick="switchCategory('success')">
-                <div class="category-title">
-                    <span>✅ ALL SUCCESS</span>
-                    <span class="copy-btn" onclick="copyCategory('success'); event.stopPropagation();">📋</span>
-                </div>
-                <div class="category-count" id="cardSuccessCount">0</div>
-            </div>
-            <div class="category-card direct" onclick="switchCategory('direct')">
+            <div class="category-card direct active" onclick="switchCategory('direct')">
                 <div class="category-title">
                     <span>📱 DIRECT</span>
                     <span class="copy-btn" onclick="copyCategory('direct'); event.stopPropagation();">📋</span>
@@ -425,19 +390,19 @@
                 </div>
                 <div class="category-count" id="cardProxyCount">0</div>
             </div>
+            <div class="category-card success" onclick="switchCategory('success')">
+                <div class="category-title">
+                    <span>✅ ALL SUCCESS</span>
+                    <span class="copy-btn" onclick="copyCategory('success'); event.stopPropagation();">📋</span>
+                </div>
+                <div class="category-count" id="cardSuccessCount">0</div>
+            </div>
             <div class="category-card failed" onclick="switchCategory('failed')">
                 <div class="category-title">
                     <span>❌ FAILED</span>
                     <span class="copy-btn" onclick="copyCategory('failed'); event.stopPropagation();">📋</span>
                 </div>
                 <div class="category-count" id="cardFailedCount">0</div>
-            </div>
-            <div class="category-card pending" onclick="switchCategory('pending')">
-                <div class="category-title">
-                    <span>⏳ PENDING</span>
-                    <span class="copy-btn" onclick="copyCategory('pending'); event.stopPropagation();">📋</span>
-                </div>
-                <div class="category-count" id="cardPendingCount">0</div>
             </div>
         </div>
 
@@ -453,7 +418,7 @@
             <!-- URL List Panel -->
             <div class="url-list-container">
                 <div class="url-list-title">
-                    <span id="currentCategoryTitle">✅ All Success URLs</span>
+                    <span id="currentCategoryTitle">📱 Direct URLs</span>
                     <span id="categoryCount">0 URLs</span>
                 </div>
                 
@@ -484,7 +449,7 @@
 
     <script>
         // State management
-        let currentCategory = 'success';
+        let currentCategory = 'direct';
         let autoRefresh = true;
         let refreshInterval = 3000;
         let stats = {};
@@ -544,18 +509,17 @@
             const counts = data.counts || {};
             const statsData = data.stats || {};
             
-            document.getElementById('totalSuccess').textContent = counts.success || 0;
             document.getElementById('directCount').textContent = counts.direct || 0;
             document.getElementById('proxyCount').textContent = counts.proxy || 0;
+            document.getElementById('totalSuccess').textContent = counts.success || 0;
             document.getElementById('failedCount').textContent = counts.failed || 0;
             document.getElementById('pendingCount').textContent = counts.pending || 0;
             document.getElementById('totalProcessed').textContent = statsData.totalProcessed || 0;
             
-            document.getElementById('cardSuccessCount').textContent = counts.success || 0;
             document.getElementById('cardDirectCount').textContent = counts.direct || 0;
             document.getElementById('cardProxyCount').textContent = counts.proxy || 0;
+            document.getElementById('cardSuccessCount').textContent = counts.success || 0;
             document.getElementById('cardFailedCount').textContent = counts.failed || 0;
-            document.getElementById('cardPendingCount').textContent = counts.pending || 0;
             
             const successRate = statsData.successRate || '0';
             document.getElementById('successRate').textContent = successRate + '%';
@@ -594,27 +558,23 @@
 
             let html = '';
             urls.slice(0, 100).forEach(url => {
-                let badgeClass = 'badge-' + category;
+                let badgeClass = '';
                 let badgeText = '';
-                let method = '';
                 
-                if (category === 'success') {
-                    // For success category, we need to check if it's direct or proxy
-                    method = details && details[url] ? details[url].method : 'unknown';
-                    badgeClass = method === 'direct' ? 'badge-direct' : 'badge-proxy';
-                    badgeText = method === 'direct' ? '📱 DIRECT' : '🔄 PROXY';
-                } else if (category === 'direct') {
+                if (category === 'direct') {
                     badgeClass = 'badge-direct';
                     badgeText = '📱 DIRECT';
                 } else if (category === 'proxy') {
                     badgeClass = 'badge-proxy';
                     badgeText = '🔄 PROXY';
+                } else if (category === 'success') {
+                    // For success category, we need to check if it's direct or proxy
+                    const method = details && details[url] ? details[url].method : 'unknown';
+                    badgeClass = method === 'direct' ? 'badge-direct' : 'badge-proxy';
+                    badgeText = method === 'direct' ? '📱 DIRECT' : '🔄 PROXY';
                 } else if (category === 'failed') {
                     badgeClass = 'badge-failed';
                     badgeText = '❌ FAILED';
-                } else if (category === 'pending') {
-                    badgeClass = 'badge-pending';
-                    badgeText = '⏳ PENDING';
                 }
 
                 html += `
@@ -676,11 +636,10 @@
             event.currentTarget.classList.add('active');
             
             const titles = {
+                'direct': '📱 Direct URLs',
+                'proxy': '🔄 Proxy URLs',
                 'success': '✅ All Success URLs',
-                'direct': '📱 Direct Success URLs',
-                'proxy': '🔄 Proxy Success URLs',
-                'failed': '❌ Failed URLs',
-                'pending': '⏳ Pending URLs'
+                'failed': '❌ Failed URLs'
             };
             document.getElementById('currentCategoryTitle').textContent = titles[category];
             
